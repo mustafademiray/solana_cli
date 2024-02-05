@@ -10,6 +10,45 @@ import {
 } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";
+import readline from "readline";
+import { promisify } from "util";
+
+// Create a readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+function question(query: string): Promise<string> {
+  return new Promise((resolve) => {
+    rl.question(query, (answer) => {
+      resolve(answer);
+    });
+  });
+}
+
+async function checkFileAndConfirmOverride(filePath: string): Promise<boolean> {
+  try {
+    // Check if the file exists
+    await fs.promises.access(filePath, fs.constants.F_OK);
+
+    // File exists, ask for confirmation
+    console.log(`The file "${filePath}" already exists.`);
+    const answer = await question(
+      "Are you sure you want to override the existing file? (y/n): "
+    );
+
+    // Close the readline interface after getting the answer
+    rl.close();
+
+    // Check the user's answer
+    return answer.toLowerCase() === "y";
+  } catch (error) {
+    // If the file doesn't exist, no need to ask for confirmation
+    rl.close(); // Ensure readline is closed in case of error
+    return true;
+  }
+}
 
 async function getBalance() {
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
@@ -59,7 +98,7 @@ async function transferSOL(to: PublicKey, amount: number) {
 }
 
 async function generateKeypair() {
-  console.log("Generating new keys!");
+  console.log("Generating a new wallet!");
   let keypair = Keypair.generate();
 
   const walletData = {
@@ -71,40 +110,14 @@ async function generateKeypair() {
 
   // Define the path to the JSON file
   const filePath = path.join(__dirname, "wallet.json");
+  const canOverride = await checkFileAndConfirmOverride(filePath);
 
+  if (canOverride) {
+    fs.writeFileSync(filePath, JSON.stringify(walletData, null, 1));
+
+    console.log("Generated wallet Pubkey: ", keypair.publicKey.toString());
+  }
   // Write the wallet data to the JSON file
-  fs.writeFileSync(filePath, JSON.stringify(walletData, null, 1));
-
-  const copiedKey = keypair.publicKey;
-  const copiedKeypair = Keypair.fromSecretKey(
-    Uint8Array.from(keypair.secretKey)
-  );
-
-  console.log(
-    `let's compare! this is generated publickey ${keypair.publicKey.toBase58()}, here's the copied publickey ${copiedKeypair.publicKey.toBase58()}`
-  );
-
-  //console.log(keypair.publicKey.toBase58() === importedKey.toBase58());
-  console.log(
-    "Public keys match after copy:",
-    keypair.publicKey.toBase58() === copiedKey.toBase58()
-  );
-
-  console.log("-------------let's import from file now--------");
-
-  const importedKeypairFunction = importWallet();
-
-  // Correctly formatted comparison log
-  console.log(
-    `let's compare! this is generated publickey ${keypair.publicKey.toBase58()}, here's the imported publickey ${importedKeypairFunction.publicKey.toBase58()}`
-  );
-
-  // Ensure you're comparing public keys correctly; the provided implementation should work as expected
-  console.log(
-    "Public keys match after import:",
-    keypair.publicKey.toBase58() ===
-      importedKeypairFunction.publicKey.toBase58()
-  );
 }
 
 async function airdropToken() {
