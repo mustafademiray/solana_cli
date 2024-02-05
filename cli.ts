@@ -11,7 +11,6 @@ import {
 import fs from "fs";
 import path from "path";
 import readline from "readline";
-import { promisify } from "util";
 
 // Create a readline interface
 const rl = readline.createInterface({
@@ -173,9 +172,6 @@ function processArgs() {
       } else {
         const address = args[1].toString();
         const amount = parseFloat(args[2]);
-
-        console.log("Entered address:", address);
-        console.log("Entered value:", amount);
 
         try {
           const key = new PublicKey(address);
