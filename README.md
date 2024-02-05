@@ -14,3 +14,5 @@ NOTE: generating a new wallet results a overriding of the existing `wallet.json`
 **transfer a value of SOL to a provided address**
 `npm start transfer [address] [value]`
 this command also updates the balance in the json file
+
+//latest used wallet: HKyAvesRQeHW75aqXB3RDsmvjQ6jddiMDVZK945HLaWg

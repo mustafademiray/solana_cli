@@ -10,11 +10,6 @@ import {
 } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";
-import * as bs58 from "bs58";
-
-async function greetUser() {
-  console.log("Hello, User!");
-}
 
 async function getBalance() {
   const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
@@ -185,17 +180,11 @@ function processArgs() {
             "Please use the following format: 'npm start transfer [address] [amount]' "
           );
         }
-
-        // if (!isNaN(num1) && !isNaN(num2)) {
-        //   sumNumbers(num1, num2);
-        // } else {
-        //   console.log("Invalid numbers provided.");
-        // }
       }
       break;
     default:
       console.log(
-        "Command not recognized. Available commands: greet, date, sum"
+        "Command not recognized. Available commands: new, balance, airdrop, and transfer [address] [value]"
       );
   }
 }
