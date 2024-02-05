@@ -6,7 +6,7 @@ after cloning this repo and opening a terminal in the folder
 **generate a new wallet**  
 `npm start new`
 
-this command generates a `wallet.json file that contains: public key, secret key and the balance data  
+this command generates a `wallet.json` file that contains: public key, secret key and the balance data  
 NOTE: generating a new wallet results a overriding of the existing `wallet.json` file, use this only for generating a new wallet!
 
 **get an airdrop SOL for the generated wallet on devnet**  
