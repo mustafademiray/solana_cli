@@ -1,8 +1,12 @@
 import {
   clusterApiUrl,
+  PublicKey,
   Connection,
   Keypair,
   LAMPORTS_PER_SOL,
+  SystemProgram,
+  Transaction,
+  sendAndConfirmTransaction,
 } from "@solana/web3.js";
 import fs from "fs";
 import path from "path";
@@ -12,12 +16,51 @@ async function greetUser() {
   console.log("Hello, User!");
 }
 
-async function displayDate() {
-  console.log("Current Date: ", new Date().toLocaleDateString());
+async function getBalance() {
+  const connection = new Connection(clusterApiUrl("devnet"), "confirmed");
+  const keypair = importWallet();
+
+  const wallet = keypair.publicKey;
+
+  // Get the current balance
+  const balance = await connection.getBalance(wallet);
+
+  // Convert balance from lamports to SOL
+  const balanceInSol = balance / LAMPORTS_PER_SOL;
+  console.log(`${balanceInSol} SOL`);
+
+  const filePath = path.join(__dirname, "wallet.json");
+  let walletData = JSON.parse(fs.readFileSync(filePath, "utf8"));
+
+  // Update the balance field
+  walletData.balance = balanceInSol;
+
+  //Updating the json file with new balance
+  fs.writeFileSync(filePath, JSON.stringify(walletData, null, 2), "utf8");
 }
 
-async function sumNumbers(a: number, b: number) {
-  console.log(`The sum of ${a} and ${b} is ${a + b}`);
+async function transferSOL(to: PublicKey, amount: number) {
+  const senderWallet = importWallet();
+  const connection = new Connection(
+    "https://api.devnet.solana.com",
+    "confirmed"
+  );
+  const transferTransaction = new Transaction().add(
+    SystemProgram.transfer({
+      fromPubkey: senderWallet.publicKey,
+      toPubkey: to,
+      lamports: amount * LAMPORTS_PER_SOL,
+    })
+  );
+
+  let transferSignature = await sendAndConfirmTransaction(
+    connection,
+    transferTransaction,
+    [senderWallet]
+  );
+  console.log("Transfer sent! Here's a signature: ", transferSignature);
+  console.log("Here's the new balance");
+  await getBalance();
 }
 
 async function generateKeypair() {
@@ -104,28 +147,50 @@ function importWallet(): Keypair {
 // Process command line arguments
 function processArgs() {
   const args = process.argv.slice(2);
-
   switch (args[0]) {
-    case "greet":
-      greetUser();
-      break;
     case "new":
       generateKeypair();
       break;
     case "airdrop":
       airdropToken();
       break;
-    case "sum":
-      if (args.length < 3) {
-        console.log("Please provide two numbers to sum.");
+    case "balance":
+      getBalance();
+      break;
+    case "transfer":
+      if (args.length > 3) {
+        console.log(
+          "Please use the following format: 'npm start transfer [address] [amount]' "
+        );
       } else {
-        const num1 = parseFloat(args[1]);
-        const num2 = parseFloat(args[2]);
-        if (!isNaN(num1) && !isNaN(num2)) {
-          sumNumbers(num1, num2);
-        } else {
-          console.log("Invalid numbers provided.");
+        const address = args[1].toString();
+        const amount = parseFloat(args[2]);
+
+        console.log("Entered address:", address);
+        console.log("Entered value:", amount);
+
+        try {
+          const key = new PublicKey(address);
+          console.log(
+            "it is a valid address",
+            PublicKey.isOnCurve(key.toBytes())
+          );
+          transferSOL(key, amount);
+        } catch (error) {
+          console.log(
+            "Entered address is not a valid wallet address: ",
+            address
+          );
+          console.log(
+            "Please use the following format: 'npm start transfer [address] [amount]' "
+          );
         }
+
+        // if (!isNaN(num1) && !isNaN(num2)) {
+        //   sumNumbers(num1, num2);
+        // } else {
+        //   console.log("Invalid numbers provided.");
+        // }
       }
       break;
     default:
